@@ -15,8 +15,7 @@ const userSchema = new Schema ({
     password: String
 });
 
-const secret = process.env.SECRET
-console.log(secret);
+const secret = process.env.SECRET;
 
 userSchema.plugin(encrypt, {secret: secret, encryptedFields: ["password"]});
 
