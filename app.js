@@ -36,7 +36,8 @@ mongoose.connect("mongodb://localhost:27017/userDB", {useNewUrlParser: true});
 const userSchema = new mongoose.Schema ({
     email: String,
     password: String,
-    googleId: String
+    googleId: String,
+    secret: String 
 });
 
 userSchema.plugin(passportLocalMongoose);
@@ -101,11 +102,13 @@ app.get("/login", (req, res)=>{
 
 app.get("/secrets", (req, res)=>{
     
-    if(req.isAuthenticated()){
-        res.render("secrets");
-    } else {
-        res.redirect("/login");
-    };
+    User.find({"secret": {$ne: null}}, (err, foundUsers)=>{
+        if(err){
+            console.log(err);
+        } else {
+            res.render("secrets", {usersWithSecrets: foundUsers});
+        }
+    })
     
 });
 
@@ -145,6 +148,32 @@ app.post("/login", (req, res)=>{
             });
         };
     });
+});
+
+app.get("/submit", (req, res)=>{
+    if(req.isAuthenticated()){
+        res.render("submit");
+    } else {
+        res.redirect("/login");
+    }
+});
+
+app.post("/submit", (req, res)=>{
+    const submittedSecret = req.body.secret;
+    if(req.user == undefined){
+        res.redirect("login");
+    } else {
+        User.findById(req.user.id, (err, foundUser)=>{
+            if(err){
+                console.log(err);
+            } else {
+                foundUser.secret = submittedSecret;
+                foundUser.save(()=> {
+                    res.redirect("/secrets");
+                });
+            }
+        });
+    };
 });
 
 app.listen(3000, ()=>{
